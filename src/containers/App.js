@@ -1,41 +1,45 @@
 import React from "react";
+import {connect} from "react-redux";
 import CardList from "../components/cardList";
 import SearchBox from "../components/searchBox";
 import "./App.css";
 import ErrorBoundry from "../components/ErrorBoundry";
 import Scorll from "../components/Scroll";
+import {setSearchField, requestRobots} from "../actions";
 // import {robots} from "./robots";
 
-class App extends React.Component {
-  constructor() {
-    super();
-    this.state = {
-      robots: [],
-      searchField: "",
-    };
-  }
-
-  componentDidMount() {
-    fetch("https://jsonplaceholder.typicode.com/users")
-      .then((response) => response.json())
-      .then((users) => this.setState({robots: users}));
-  }
-
-  onSearchChange = (event) => {
-    this.setState({searchField: event.target.value});
+const mapStateToProps = (state) => {
+  return {
+    searchField: state.searchRobots.searchField,
+    robots: state.requestRobots.robots,
+    isPending: state.requestRobots.isPending,
+    error: state.requestRobots.error,
   };
+};
+const mapDispatchToProps = (dispatch) => {
+  return {
+    onSearchChange: (event) => dispatch(setSearchField(event.target.value)),
+    onReqRobots: () => requestRobots(dispatch),
+  };
+};
+
+class App extends React.Component {
+  componentDidMount() {
+    this.props.onReqRobots();
+  }
+
   render() {
-    const fltrdRobots = this.state.robots.filter((robots) => {
+    const fltrdRobots = this.props.robots.filter((robots) => {
       return robots.name
         .toLowerCase()
-        .includes(this.state.searchField.toLowerCase());
+        .includes(this.props.searchField.toLowerCase());
     });
-    return !this.state.robots.length ? (
+    return this.props.isPending ? (
       <h2 className="tc">Loading ....</h2>
     ) : (
       <div className="tc">
         <h1 className="f1">Robo Friends</h1>
-        <SearchBox serchChange={this.onSearchChange} />
+        <SearchBox serchChange={this.props.onSearchChange} />
         <Scorll>
           <ErrorBoundry>
             <CardList robots={fltrdRobots} />
@@ -46,4 +50,4 @@ class App extends React.Component {
   }
 }
 
-export default App;
+export default connect(mapStateToProps, mapDispatchToProps)(App);
